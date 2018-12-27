@@ -19,28 +19,30 @@ def get_input_args():
     parser.add_argument('data_dir', type=str, default='flowers', help='directory to load images')
     parser.add_argument('--save_dir', type=str, default='', help='directory, where to save checkpoints')
     parser.add_argument('--hidden_units', type=int, default=5024, help='hidden units, default 5024')
-    parser.add_argument('--learn_rate', type=float, default=0.001, help='learning rate, default 0.001')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate, default 0.001')
     parser.add_argument('--gpu', dest='gpu', default=False, action='store_true', help='training device ')
-    parser.add_argument('--epochs', type=int, default=1, help='training epochs, default 20')
+    parser.add_argument('--epochs', type=int, default=10, help='training epochs, default 10')
 
-    parser.set_defaults(gpu=True)
+    #parser.set_defaults(gpu=True)
 
     return parser.parse_args()
 
 def main():
 	input_args= get_input_args()
-	print(input_args)
+	#print(input_args)
 	if input_args.arch == 'vgg16' :
 		input_size = valid_networks[input_args.arch]
 		arch = input_args.arch
-        
+	elif input_args.arch == 'densenet121':
+		input_size = valid_networks[input_args.arch]
+		arch = input_args.arch    
 		#return arch, input_size
 	else:
 		print('please enter a valid network vgg16 or densenet121')
 
 	# use helper function load_data to create trainloader, validationloader and testlodaer
 	trainloader, validationloader, testloader, class_to_idx, batch_size = helper.load_data(input_args.data_dir)
-	print(trainloader)
+	#print(trainloader)
     
 
 
@@ -67,10 +69,10 @@ def main():
                       ('softmax', nn.LogSoftmax(dim=1))
 	]))
 	model.classifier = classifier
-	print(model)
+	#print(model)
 	#criterion
 	criterion = nn.NLLLoss()
-	learnrate = input_args.learn_rate
+	learnrate = input_args.learning_rate
 	optimizer = optim.Adam(model.classifier.parameters(), learnrate)
 
 	#device
@@ -79,7 +81,7 @@ def main():
 		#return device
 	else:
 		device = torch.device('cpu')
-	print(device)
+	#print(device)
 	# training and printing the accuracy
 	epochs = input_args.epochs
 	steps = 0
@@ -129,9 +131,9 @@ def main():
     "Test-Accuracy: {}".format(accuracy/len(testloader)))
 
     # : Save the checkpoint
-	save_location = input_args.save_dir + 'checkpoint.pth'
+	save_location = input_args.save_dir  + 'checkpoint.pth'
 	checkpoint = {
-    'arch': 'input_args.arch',
+    'arch': input_args.arch,
     'input_size': model.classifier[0].in_features,
     'state_dict': model.classifier.state_dict(),
     'class_to_idx': class_to_idx,

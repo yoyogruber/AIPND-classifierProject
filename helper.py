@@ -6,6 +6,8 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms, models
 from collections import OrderedDict
 from PIL import Image
+import json
+
 
 def load_data(data_dir):
 	train_dir = data_dir + '/train'
@@ -42,7 +44,7 @@ def load_data(data_dir):
 	return trainloader, validationloader, testloader, class_to_idx, trainloader.batch_size
 
 # function for the validation pass
-def validation(model, validationloader, criterion):
+def validation(model, validationloader, criterion, device):
     validation_loss = 0
     accuracy = 0
     
@@ -62,16 +64,18 @@ def load_checkpoint(filepath):
     checkpoint = torch.load(filepath)
     arch = checkpoint['arch']
     if arch == 'vgg16':
-    	model = models.vgg15(pretrained=True)
+    	model = models.vgg16(pretrained=True)
     elif arch == 'densenet121':
     	model = models.densenet121(pretrained=True)
+    #model=models.vgg16(pretrained=True)
+    #print(model)
     classifier = checkpoint['classifier']
     model.classifier = classifier
     model.classifier.load_state_dict(checkpoint['state_dict'])
     gpu =checkpoint['gpu']
     model.class_to_idx = checkpoint['class_to_idx']
     
-    return model, checkpoint['class_to_idx'], gpu
+    return model, checkpoint['class_to_idx'] #, gpu
     
 def process_image(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
@@ -108,3 +112,35 @@ def load_categories(path='cat_to_name.json'):
 		cat_to_name = json.load(f)
 
 	return cat_to_name
+
+
+def predict(image_path, model, topk, gpu):
+    ''' Predict the class (or classes) of an image using a trained deep learning model.
+    '''
+    model.eval()
+    #check fo gpu
+    if gpu:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')  # If gpu used, check for cuda
+    else:
+            device = 'cpu'
+    class_to_idx = model.class_to_idx
+    #print(class_to_idx)
+    # Inverting class_to_idx - Kudos to Mentor ShintoT
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+    
+    model= model.to(device)
+    img_predict = torch.FloatTensor([process_image(image_path)])
+    img_predict = img_predict.to(device)
+
+    with torch.no_grad():
+        result = model(img_predict)
+    
+    
+    # Save probs and classes
+    probs = np.array(torch.exp(result).topk(topk)[0])
+    #probs = probs.to('cpu') # ensuring numpy conversion 
+    classes = np.array(torch.exp(result).topk(topk)[1])
+    classes = [idx_to_class[c] for c in classes[0,:]]  
+    
+    return(probs, classes)
+
