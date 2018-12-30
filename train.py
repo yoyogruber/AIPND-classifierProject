@@ -29,35 +29,29 @@ def get_input_args():
 
 def main():
 	input_args= get_input_args()
-	#print(input_args)
-	if input_args.arch == 'vgg16' :
-		input_size = valid_networks[input_args.arch]
-		arch = input_args.arch
-	elif input_args.arch == 'densenet121':
-		input_size = valid_networks[input_args.arch]
-		arch = input_args.arch    
-		#return arch, input_size
-	else:
-		print('please enter a valid network vgg16 or densenet121')
 
 	# use helper function load_data to create trainloader, validationloader and testlodaer
 	trainloader, validationloader, testloader, class_to_idx, batch_size = helper.load_data(input_args.data_dir)
 	#print(trainloader)
-    
 
-
-	# Start building the classifier:
+    # Start building the classifier:
 	dropout = 0.5
 	output_size = 102
 	hidden_sizes = input_args.hidden_units
+    
+	arch = input_args.arch
 
 	if arch == 'vgg16':
 		model = models.vgg16(pretrained = True)
-
+		input_size = valid_networks[input_args.arch]
+		arch = input_args.arch
 		#return model, hidden_sizes
 	elif arch == 'densenet121':
 		model = models.densenet121(pretrained= True)
-
+		input_size = valid_networks[input_args.arch]
+		arch = input_args.arch  
+	else:
+		print('please enter a valid network vgg16 or densenet121')        
 	# Freeze parameters 
 	for param in model.parameters():
 		param.requires_grad = False

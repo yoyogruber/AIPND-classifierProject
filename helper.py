@@ -25,7 +25,7 @@ def load_data(data_dir):
 	                                      transforms.CenterCrop(224),
 	                                      transforms.ToTensor(),
 	                                      transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])])
-	test_transforms = transforms.Compose([transforms.Resize(255),
+	test_transforms = transforms.Compose([transforms.RandomResizedCrop(224),
 	                                      transforms.CenterCrop(224),
 	                                      transforms.ToTensor(),
 	                                      transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])])
@@ -63,10 +63,7 @@ def validation(model, validationloader, criterion, device):
 def load_checkpoint(filepath):
     checkpoint = torch.load(filepath)
     arch = checkpoint['arch']
-    if arch == 'vgg16':
-    	model = models.vgg16(pretrained=True)
-    elif arch == 'densenet121':
-    	model = models.densenet121(pretrained=True)
+    model = models.__dict__[checkpoint['arch']](pretrained=True)
     #model=models.vgg16(pretrained=True)
     #print(model)
     classifier = checkpoint['classifier']
@@ -80,6 +77,16 @@ def load_checkpoint(filepath):
 def process_image(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
         returns an Numpy array
+  needs to be corrected along these lines:
+  def process_image(image):
+  width, height = image.size
+  size = 256, 256
+  if width > height:
+      ratio = float(width) / float(height)
+      newheight = ratio * size[0]
+      image = image.resize((size[0], int(floor(newheight))), Image.ANTIALIAS)
+  else:
+      ## Calculate for the other case
     '''
     # Open the image and resize it
     image_pil = Image.open(image)
